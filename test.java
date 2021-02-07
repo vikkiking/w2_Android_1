@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class test {
@@ -6,18 +7,24 @@ public class test {
         Student A = new Student("s001", "AA", "cmcs"),
                 B = new Student("s002", "BB", "cmcs");
         Teacher T = new Teacher("t001", "张三");
-        Course database = new Course("database", "张三", "R203"),
-                ds = new Course("ds", "张三", "R306");
+        DataStructure dataStructure = new DataStructure("张三", "R203");
+        Java java = new Java("张三", "R306");
         Counselor mm = new Counselor("c001", "李四");
-        database.students.add(A);
-        database.students.add(B);
-        ds.students.add(A);
-        ds.students.add(B);
-        T.courses.add(database);
-        T.courses.add(ds);
+        dataStructure.students.add(A);
+        dataStructure.students.add(B);
+        java.students.add(A);
+        java.students.add(B);
+        T.courses.add(dataStructure);
+        T.courses.add(dataStructure);
         System.out.println(T);
-        System.out.println(database);
-        T.beginClass(ds);
+        System.out.println(dataStructure);
+        try {
+            java.beginClass();
+        } catch (Absence absence) {
+            System.out.println("开始点名");
+            System.out.println(absence.getAbsence());
+            System.out.println("以上同学旷课");
+        }
         mm.manageStudents();
     }
 }
@@ -52,18 +59,15 @@ class Teacher {
 
     @Override
     public String toString() {
-        StringBuilder cs=new StringBuilder();
-        for(Course c :courses)cs.append('\'').append(c.name).append("\' ");
+        StringBuilder cs = new StringBuilder();
+        for (Course c : courses) cs.append('\'').append(c.name).append("\' ");
         return "Teacher{\n" +
-                " empNo='" + empNo +  "'\n" +
-                " name='" + name +  "'\n" +
+                " empNo='" + empNo + "'\n" +
+                " name='" + name + "'\n" +
                 " courses=" + cs +
                 '}';
     }
 
-    public void beginClass(Course c) {
-        System.out.println(name+"开始上" + c.name + "课");
-    }
 }
 
 interface Manage {
@@ -77,18 +81,34 @@ class Counselor extends Teacher implements Manage {
 
     @Override
     public void manageStudents() {
-        System.out.println(name+"开始管理学生");
+        System.out.println(name + "开始管理学生");
     }
 }
 
-class Course {
-    String name, teacher, classRoom;
-    List<Student> students = new ArrayList<Student>();
+abstract class Course {
+    protected String name, teacher, classRoom;
+    protected List<Student> students = new ArrayList<Student>();
 
     Course(String Name, String Teacher, String ClassRoom) {
         name = Name;
         teacher = Teacher;
         classRoom = ClassRoom;
+    }
+
+    @Override
+    public abstract String toString();
+
+    public void beginClass() throws Absence {
+        System.out.println(teacher + "开始上" + name + "课");
+        if (!students.isEmpty())
+            throw new Absence(Collections.singletonList(students.get(0)));
+    }
+}
+
+class Java extends Course {
+
+    Java(String Teacher, String ClassRoom) {
+        super("Java", Teacher, ClassRoom);
     }
 
     @Override
@@ -102,5 +122,43 @@ class Course {
                 " classRoom='" + classRoom + "'\n" +
                 " students=\n" + stu +
                 '}';
+    }
+}
+
+class DataStructure extends Course {
+
+    DataStructure(String Teacher, String ClassRoom) {
+        super("DataStructure", Teacher, ClassRoom);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder stu = new StringBuilder();
+        for (Student s : students)
+            stu.append(" ").append(s);
+        return "Course{\n" +
+                " name='" + name + "'\n" +
+                " teacher='" + teacher + "'\n" +
+                " classRoom='" + classRoom + "'\n" +
+                " students=\n" + stu +
+                '}';
+    }
+}
+
+class Absence extends Exception {
+    private List<Student> list = new ArrayList<Student>();
+
+    public Absence(List<Student> stu) {
+        stu.forEach(this::add);
+    }
+
+    public void add(Student stu) {
+        list.add(stu);
+    }
+
+    public List<String> getAbsence() {
+        List<String> stus = new ArrayList<String>();
+        list.forEach(k -> stus.add(k.name));
+        return stus;
     }
 }
